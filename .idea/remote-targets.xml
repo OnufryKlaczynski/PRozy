@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="RemoteTargetsManager">
+    <targets>
+      <target name="WSL - Ubuntu-18.04" type="wsl">
+        <config>
+          <option name="distributionMsId" value="Ubuntu-18.04" />
+          <option name="projectRootOnTarget" value="/mnt/c/Program Files/JetBrains/IntelliJ IDEA 2020.2.3/jbr/bin&#10;/PRoz" />
+        </config>
+        <ContributedStateBase type="JavaLanguageRuntime">
+          <config>
+            <option name="classpathFolder">
+              <VolumeState>
+                <option name="remotePath" value="/usr/local/lib/mpi.jar" />
+              </VolumeState>
+            </option>
+            <option name="homePath" value="/usr" />
+            <option name="javaVersionString" value="1.8.0_282" />
+          </config>
+        </ContributedStateBase>
+      </target>
+    </targets>
+  </component>
+</project>
