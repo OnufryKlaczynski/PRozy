@@ -20,7 +20,8 @@ public class Main {
         PROCESS_COUNT = processesCount;
 
         Process process = new Process(myrank, processesCount, STORE_SPACE, MEDIUM_COUNT);
-        process.run();
+        ProcessService processService = new ProcessService();
+        processService.run(process);
 
 
         System.out.println("Process " + myrank + " exiting");

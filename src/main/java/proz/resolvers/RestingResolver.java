@@ -36,9 +36,11 @@ public class RestingResolver{
             case REQ_MEDIUM:
                 communication.sendToOne(new int[] {Clock.getClock()}, Tag.ACK_MEDIUM, source);
                 int mediumId = message[1];
-                Queues.mediumQueue.get(mediumId).add(new MediumRequest(hisClock, source));
+                int priority = message[2];
+                Queues.mediumQueue.get(mediumId).add(new MediumRequest(hisClock, source, priority));
                 Queues.mediumQueue.get(mediumId).sort(
                         Comparator.comparing(MediumRequest::getClock)
+                                .thenComparing(MediumRequest::getPriority, Comparator.reverseOrder())
                                 .thenComparing(MediumRequest::getSourceId)
                 );
                 break;

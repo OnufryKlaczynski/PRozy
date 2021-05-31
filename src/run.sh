@@ -1,5 +1,5 @@
 mpirun -np 5 \
-  --hostfile hostfile \
+  --hostfile /home/toor/PRoz/src/hostfile \
   --prefix /usr/local \
   /usr/bin/java \
   -Djava.library.path=/usr/local/lib \

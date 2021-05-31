@@ -1,14 +1,13 @@
 package proz.requests;
 
-public class MediumRequest {
+public class TunnelRequest {
+
     final int clock;
     final int sourceId;
-    final int priority;
 
-    public MediumRequest(int clock, int sourceId, int priority) {
+    public TunnelRequest(int clock, int sourceId) {
         this.clock = clock;
         this.sourceId = sourceId;
-        this.priority = priority;
     }
 
     public int getClock() {
@@ -19,7 +18,4 @@ public class MediumRequest {
         return sourceId;
     }
 
-    public int getPriority() {
-        return priority;
-    }
 }

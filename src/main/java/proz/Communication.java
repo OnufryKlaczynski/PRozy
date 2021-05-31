@@ -25,7 +25,7 @@ public class Communication {
 
     public void sendToOne(int[] message, Tag messageTag, int toWho) throws MPIException {
         Clock.clockPlusOne();
-        System.out.printf("Process: " + processesCount + " sending message: " + Arrays.toString(message), " with tag: " + messageTag + " to: " + toWho + "\n");
+        System.out.println("Process: " + processesCount + " sending message: " + Arrays.toString(message) +  " with tag: " + messageTag + " to: " + toWho);
         send(message, messageTag, toWho);
     }
 
