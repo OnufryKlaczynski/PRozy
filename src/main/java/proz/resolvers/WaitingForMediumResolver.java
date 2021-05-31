@@ -29,8 +29,8 @@ public class WaitingForMediumResolver {
                 communication.sendToOne(new int[] {Clock.getClock()}, Tag.ACK_MEDIUM, source);
                 int mediumId = message[1];
                 int priority = message[2];
-                Queues.mediumQueue.get(mediumId).add(new MediumRequest(hisClock, source, priority));
-                Queues.mediumQueue.get(mediumId).sort(
+                Queues.mediumRequests.get(mediumId).add(new MediumRequest(hisClock, source, priority));
+                Queues.mediumRequests.get(mediumId).sort(
                         Comparator.comparing(MediumRequest::getClock)
                                 .thenComparing(MediumRequest::getPriority, Comparator.reverseOrder())
                                 .thenComparing(MediumRequest::getSourceId)
@@ -71,7 +71,7 @@ public class WaitingForMediumResolver {
                 // TODO To jest źle bo to miał być array a jest lista i indeksy się popierdolą, zamienić na null value przy usuwaniu?
                 //TODO czy możę trzymam jednak indeks tego medium?
                 //TODO a jednak chyba się nie pierdoli? bo pierwsza lista jest o stałym rozmiarze
-                Queues.mediumQueue.get(mediumId).removeIf(mediumRequest -> mediumRequest.getSourceId() == source);
+                Queues.mediumRequests.get(mediumId).removeIf(mediumRequest -> mediumRequest.getSourceId() == source);
                 Queues.blockedMediums.removeIf(id -> id  == mediumId);
                 if (Queues.blockedMediums.size() == Main.MEDIUM_COUNT - 1) {
                     //TODO czy tu powinno być requestMediumPriority + 1?
@@ -90,7 +90,6 @@ public class WaitingForMediumResolver {
                                 .thenComparing(TunnelRequest::getSourceId)
                 );
                 int[] response = new int[] {Clock.getClock()};
-
                 communication.sendToOne(response, Tag.ACK_TUNNEL, source);
                 break;
             case ACK_TUNNEL:

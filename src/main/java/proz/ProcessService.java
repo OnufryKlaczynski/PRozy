@@ -7,6 +7,7 @@ import proz.resolvers.RestingResolver;
 import proz.resolvers.TravelingResolver;
 import proz.resolvers.WaitingForMediumResolver;
 import proz.resolvers.WaitingForStoreResolver;
+import utils.Colors;
 
 import java.util.Arrays;
 
@@ -17,8 +18,8 @@ public class ProcessService {
         int[] message = new int[] {Clock.getClock()};
 
 
-        Communication communication = new Communication(process.processesCount);
-        System.out.printf("My rank is %d \n", process.myrank);
+        Communication communication = new Communication(process.processesCount, process.color);
+        System.out.println(process.color.getColor() + " My rank is " +  process.myrank);
 
 
         if (0 == process.myrank) {
@@ -32,11 +33,12 @@ public class ProcessService {
 
 
             respond(messageInfos, message, process, communication);
-            System.out.println(
-                    "Process " + process.myrank +
+            System.out.println(process.color.getColor() +
+                    " Process " + process.myrank +
                             " in state: " + process.touristState +
                             " got message from:" + messageInfos.getSource() +
-                            " tag:" + messageInfos.getTag() +
+                            " " + Colors.values()[messageInfos.getSource()].getColor() +
+                            "tag:" + messageInfos.getTag() +
                             " message: " + Arrays.toString(message)
             );
 

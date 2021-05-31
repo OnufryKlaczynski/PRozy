@@ -1,12 +1,6 @@
 package proz;
 
-import mpi.MPI;
-import mpi.MPIException;
-import mpi.Status;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import utils.Colors;
 
 public class Process {
 
@@ -14,6 +8,8 @@ public class Process {
     public final int processesCount;
     private int STORE_SPACE;
     private int MEDIUM_COUNT;
+
+    public final Colors color;
 
 
 
@@ -24,6 +20,7 @@ public class Process {
 
     public Process(int myrank, int processesCount, int STORE_SPACE, int MEDIUM_COUNT) {
         this.myrank = myrank;
+        color = Colors.values()[myrank];
         this.processesCount = processesCount;
         this.STORE_SPACE = STORE_SPACE;
         this.MEDIUM_COUNT = MEDIUM_COUNT;

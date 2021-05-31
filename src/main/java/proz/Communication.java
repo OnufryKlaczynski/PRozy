@@ -2,6 +2,7 @@ package proz;
 
 import mpi.MPI;
 import mpi.MPIException;
+import utils.Colors;
 
 import java.util.Arrays;
 
@@ -9,9 +10,11 @@ import java.util.Arrays;
 public class Communication {
 
     private final int processesCount;
+    private Colors color;
 
-    public Communication(int processesCount) {
+    public Communication(int processesCount, Colors color) {
         this.processesCount = processesCount;
+        this.color = color;
     }
 
 
@@ -25,7 +28,11 @@ public class Communication {
 
     public void sendToOne(int[] message, Tag messageTag, int toWho) throws MPIException {
         Clock.clockPlusOne();
-        System.out.println("Process: " + processesCount + " sending message: " + Arrays.toString(message) +  " with tag: " + messageTag + " to: " + toWho);
+        System.out.println(color.getColor() +
+                " Process: " + processesCount +
+                " sending message: " + Arrays.toString(message) +
+                " with tag: " + messageTag +
+                " to: " + toWho + " " + Colors.values()[toWho].getColor());
         send(message, messageTag, toWho);
     }
 
