@@ -32,7 +32,7 @@ public class Communication {
                 " Process: " + processesCount +
                 " sending message: " + Arrays.toString(message) +
                 " with tag: " + messageTag +
-                " to: " + toWho + " " + Colors.values()[toWho].getColor());
+                " to: " + toWho + " " + Colors.values()[toWho].getColor() + "\n");
         send(message, messageTag, toWho);
     }
 

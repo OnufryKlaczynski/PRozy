@@ -19,7 +19,7 @@ public class ProcessService {
 
 
         Communication communication = new Communication(process.processesCount, process.color);
-        System.out.println(process.color.getColor() + " My rank is " +  process.myrank);
+        System.out.println(process.color.getColor() + " My rank is " +  process.myrank + "\n");
 
 
         if (0 == process.myrank) {
@@ -38,8 +38,9 @@ public class ProcessService {
                             " in state: " + process.touristState +
                             " got message from:" + messageInfos.getSource() +
                             " " + Colors.values()[messageInfos.getSource()].getColor() +
-                            "tag:" + messageInfos.getTag() +
+                            "tag:" + Tag.of(messageInfos.getTag()) +
                             " message: " + Arrays.toString(message)
+                    + "\n"
             );
 
         }

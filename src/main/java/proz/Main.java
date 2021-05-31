@@ -24,7 +24,7 @@ public class Main {
         processService.run(process);
 
 
-        System.out.println("Process " + myrank + " exiting");
+        System.out.println("Process " + myrank + " exiting" + "\n");
         MPI.Finalize();
 
     }

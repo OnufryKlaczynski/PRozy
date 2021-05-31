@@ -25,7 +25,7 @@ public class WaitingForStoreResolver {
                 Queues.ackStoreCount += 1;
 
                 if (Main.PROCESS_COUNT - Main.STORE_SPACE -  Queues.ackStoreCount < 0 ) {
-                    System.out.println("Wchodzę do sklepu");
+                    System.out.println("Wchodzę do sklepu" + "\n");
                     process.touristState = TouristState.WAITING_FOR_MEDIUM;
                     process.requestedMediumId = process.myrank % Main.MEDIUM_COUNT;
                     int[] requestMedium = {Clock.getClock(), process.requestedMediumId, process.requestedMediumPriority};

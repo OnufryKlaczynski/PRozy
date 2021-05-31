@@ -24,7 +24,7 @@ public class Process {
         this.processesCount = processesCount;
         this.STORE_SPACE = STORE_SPACE;
         this.MEDIUM_COUNT = MEDIUM_COUNT;
-        touristState = TouristState.WAITING_FOR_STORE;
+        touristState = TouristState.RESTING;
 
     }
 
