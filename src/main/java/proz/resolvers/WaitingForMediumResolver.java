@@ -28,8 +28,8 @@ public class WaitingForMediumResolver {
 //              Sam czeka na medium i ktoś inny przysła mu info że też chce medium
                 communication.sendToOne(new int[] {Clock.getClock()}, Tag.ACK_MEDIUM, source);
                 int mediumId = message[1];
-                int priority = message[2];
-                Queues.mediumRequests.get(mediumId).add(new MediumRequest(hisClock, source, priority));
+                int hisPriority = message[2];
+                Queues.mediumRequests.get(mediumId).add(new MediumRequest(hisClock, source, hisPriority));
                 Queues.mediumRequests.get(mediumId).sort(
                         Comparator.comparing(MediumRequest::getClock)
                                 .thenComparing(MediumRequest::getPriority, Comparator.reverseOrder())

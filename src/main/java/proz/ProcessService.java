@@ -28,7 +28,7 @@ public class ProcessService {
         }
 
         while (true) {
-            Status messageInfos = MPI.COMM_WORLD.recv(message, 1, MPI.INT, MPI.ANY_SOURCE, MPI.ANY_TAG);
+            Status messageInfos = MPI.COMM_WORLD.recv(message, 3, MPI.INT, MPI.ANY_SOURCE, MPI.ANY_TAG);
             Clock.setClock(Integer.max(message[0], Clock.getClock()) + 1);
 
 
