@@ -1,12 +1,9 @@
 package proz.requests;
 
-public class StoreRequest {
-    final int clock;
-    final int sourceId;
+public class StoreRequest extends BaseRequest {
 
     public StoreRequest(int clock, int sourceId) {
-        this.clock = clock;
-        this.sourceId = sourceId;
+        super(clock, sourceId);
     }
 
     public int getClock() {

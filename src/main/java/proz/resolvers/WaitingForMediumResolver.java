@@ -26,7 +26,9 @@ public class WaitingForMediumResolver {
                 break;
             case REQ_MEDIUM:
 //              Sam czeka na medium i ktoś inny przysła mu info że też chce medium
-                communication.sendToOne(new int[] {Clock.getClock()}, Tag.ACK_MEDIUM, source);
+                if (source != process.myrank) {
+                    communication.sendToOne(new int[] {Clock.getClock(), -1, -1}, Tag.ACK_MEDIUM, source);
+                }
                 int mediumId = message[1];
                 int hisPriority = message[2];
                 Queues.mediumRequests.get(mediumId).add(new MediumRequest(hisClock, source, hisPriority));
@@ -44,7 +46,7 @@ public class WaitingForMediumResolver {
                 if (blockedMediumId != -1) {
                     Queues.blockedMediums.add(blockedMediumId);
                 }
-//              TODO: Czy to powinno być - 1 ?
+//              TODO: Czy to powinno być - 1 ? chyba tak bo siebie nie liczymy
                 if (Queues.ackMediumCount == Main.PROCESS_COUNT - 1) {
                     if ( Queues.blockedMediums.size() == Main.MEDIUM_COUNT) {
 //                      TODO: nie prosimy o medium dopóki nie dostaniemy release
@@ -62,6 +64,11 @@ public class WaitingForMediumResolver {
                         }
                         int[] requestMedium = {Clock.getClock(), process.requestedMediumId, process.requestedMediumPriority};
                         communication.sendToAll(requestMedium, Tag.REQ_MEDIUM);
+                    } else {
+                        System.out.println(process.color.getColor() + "Zaczynam podróżować i zmieniam stan na: " + TouristState.LEAVING_TUNNEL);
+                        process.touristState = TouristState.LEAVING_TUNNEL;
+                        communication.sendToAll(new int[]{Clock.getClock(), process.requestedMediumId, -1}, Tag.REQ_TUNNEL);
+                        return;
                     }
                 }
 
@@ -89,7 +96,7 @@ public class WaitingForMediumResolver {
                         Comparator.comparing(TunnelRequest::getClock)
                                 .thenComparing(TunnelRequest::getSourceId)
                 );
-                int[] response = new int[] {Clock.getClock()};
+                int[] response = new int[] {Clock.getClock(), -1, -1};
                 communication.sendToOne(response, Tag.ACK_TUNNEL, source);
                 break;
             case ACK_TUNNEL:

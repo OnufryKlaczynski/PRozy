@@ -21,7 +21,7 @@ public class RestingResolver{
 
         switch(messageTag) {
             case REQ_STORE:
-                communication.sendToOne(new int[] {Clock.getClock()}, Tag.ACK_STORE, source);
+                communication.sendToOne(new int[] {Clock.getClock(),  -1, -1}, Tag.ACK_STORE, source);
                 Queues.storeRequests.add(new StoreRequest(hisClock, source));
                 Queues.storeRequests.sort(
                         Comparator.comparing(StoreRequest::getClock)
@@ -35,7 +35,7 @@ public class RestingResolver{
 
                 break;
             case REQ_MEDIUM:
-                communication.sendToOne(new int[] {Clock.getClock()}, Tag.ACK_MEDIUM, source);
+                communication.sendToOne(new int[] {Clock.getClock(),  -1, -1}, Tag.ACK_MEDIUM, source);
                 int mediumId = message[1];
                 int priority = message[2];
                 Queues.mediumRequests.get(mediumId).add(new MediumRequest(hisClock, source, priority));
@@ -59,7 +59,7 @@ public class RestingResolver{
                         Comparator.comparing(TunnelRequest::getClock)
                                 .thenComparing(TunnelRequest::getSourceId)
                 );
-                communication.sendToOne(new int[] {Clock.getClock()}, Tag.ACK_TUNNEL, source);
+                communication.sendToOne(new int[] {Clock.getClock(), -1, -1}, Tag.ACK_TUNNEL, source);
                 break;
             case ACK_TUNNEL:
                 throw new IllegalStateException();

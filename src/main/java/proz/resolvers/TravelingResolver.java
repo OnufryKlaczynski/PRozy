@@ -8,6 +8,7 @@ import proz.requests.MediumRequest;
 import proz.requests.StoreRequest;
 import proz.requests.TunnelRequest;
 
+import java.sql.SQLOutput;
 import java.util.Comparator;
 
 public class TravelingResolver {
@@ -20,7 +21,7 @@ public class TravelingResolver {
 
         switch (messageTag) {
             case REQ_STORE:
-                communication.sendToOne(new int[]{Clock.getClock()}, Tag.ACK_STORE, source);
+                communication.sendToOne(new int[]{Clock.getClock(), -1, -1}, Tag.ACK_STORE, source);
                 Queues.storeRequests.add(new StoreRequest(hisClock, source));
                 Queues.storeRequests.sort(
                         Comparator.comparing(StoreRequest::getClock)
@@ -33,7 +34,7 @@ public class TravelingResolver {
                 Queues.storeRequests.removeIf(storeRequest -> storeRequest.getSourceId() == source);
                 break;
             case REQ_MEDIUM:
-                communication.sendToOne(new int[]{Clock.getClock()}, Tag.ACK_MEDIUM, source);
+                communication.sendToOne(new int[]{Clock.getClock(), -1, -1}, Tag.ACK_MEDIUM, source);
                 int mediumId = message[1];
                 int priority = message[2];
                 Queues.mediumRequests.get(mediumId).add(new MediumRequest(hisClock, source, priority));
@@ -61,13 +62,14 @@ public class TravelingResolver {
                 break;
             case ACK_TUNNEL:
                 Queues.ackTunnelCount += 1;
-                if (Queues.ackTunnelCount == Main.PROCESS_COUNT) {
+                if (Queues.ackTunnelCount == Main.PROCESS_COUNT -1) {
                     //Możemy wejść jeśli jesteśmy pierwsi w kolejce
                     //TODO czasowe wyjście, czas podróży
                     if (Queues.tunnelRequests.get(process.requestedMediumId).get(0).getSourceId() == process.myrank) {
-                        communication.sendToAll(new int[]{Clock.getClock(), process.requestedMediumId}, Tag.RELEASE_TUNNEL);
+                        communication.sendToAll(new int[]{Clock.getClock(), process.requestedMediumId, -1}, Tag.RELEASE_TUNNEL);
                         process.touristState = TouristState.RESTING;
                         process.requestedMediumId = -1;
+                        System.out.println(process.color.getColor() + "Przeszedłem tunel i wychodzę");
                     }
                 }
                 break;

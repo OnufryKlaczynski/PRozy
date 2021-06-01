@@ -38,6 +38,6 @@ public class Communication {
 
 
     private void send(int[] message, Tag messageTag, int toWho) throws MPIException {
-        MPI.COMM_WORLD.send(message, 1, MPI.INT, toWho, messageTag.messageTag);
+        MPI.COMM_WORLD.send(message, 3, MPI.INT, toWho, messageTag.messageTag);
     }
 }

@@ -15,14 +15,14 @@ public class ProcessService {
 
 
     public void run(Process process) throws MPIException {
-        int[] message = new int[] {Clock.getClock()};
+        int[] message = new int[] {Clock.getClock(), -1, -1};
 
 
         Communication communication = new Communication(process.processesCount, process.color);
         System.out.println(process.color.getColor() + " My rank is " +  process.myrank + "\n");
 
 
-        if (0 == process.myrank) {
+        if (0 == process.myrank || 1 == process.myrank) {
             process.touristState = TouristState.WAITING_FOR_STORE;
             communication.sendToAll(message, Tag.REQ_STORE);
         }

@@ -1,13 +1,10 @@
 package proz.requests;
 
-public class TunnelRequest {
+public class TunnelRequest extends BaseRequest{
 
-    final int clock;
-    final int sourceId;
 
     public TunnelRequest(int clock, int sourceId) {
-        this.clock = clock;
-        this.sourceId = sourceId;
+        super(clock, sourceId);
     }
 
     public int getClock() {

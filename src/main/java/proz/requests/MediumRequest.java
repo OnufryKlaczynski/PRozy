@@ -1,13 +1,10 @@
 package proz.requests;
 
-public class MediumRequest {
-    final int clock;
-    final int sourceId;
+public class MediumRequest extends BaseRequest{
     final int priority;
 
     public MediumRequest(int clock, int sourceId, int priority) {
-        this.clock = clock;
-        this.sourceId = sourceId;
+        super(clock, sourceId);
         this.priority = priority;
     }
 
