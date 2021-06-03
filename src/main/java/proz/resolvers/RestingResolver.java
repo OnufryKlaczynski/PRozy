@@ -9,7 +9,9 @@ import proz.requests.TunnelRequest;
 
 import java.util.Comparator;
 
-public class RestingResolver{
+import static proz.resolvers.Utils.*;
+
+public class RestingResolver {
 
 
     public static void resolve(Status messageInfo, int[] message, Communication communication) throws MPIException {
@@ -19,14 +21,10 @@ public class RestingResolver{
         int hisClock = message[0];
 
 
-        switch(messageTag) {
+        switch (messageTag) {
             case REQ_STORE:
-                communication.sendToOne(new int[] {Clock.getClock(),  -1, -1}, Tag.ACK_STORE, source);
-                Queues.storeRequests.add(new StoreRequest(hisClock, source));
-                Queues.storeRequests.sort(
-                        Comparator.comparing(StoreRequest::getClock)
-                                .thenComparing(StoreRequest::getSourceId)
-                );
+                communication.sendToOne(new int[]{Clock.getClock(), -1, -1}, Tag.ACK_STORE, source);
+                addRequestStoreToQueue(source, hisClock);
                 break;
             case ACK_STORE:
                 throw new IllegalStateException();
@@ -35,15 +33,10 @@ public class RestingResolver{
 
                 break;
             case REQ_MEDIUM:
-                communication.sendToOne(new int[] {Clock.getClock(),  -1, -1}, Tag.ACK_MEDIUM, source);
+                communication.sendToOne(new int[]{Clock.getClock(), -1, -1}, Tag.ACK_MEDIUM, source);
                 int mediumId = message[1];
                 int priority = message[2];
-                Queues.mediumRequests.get(mediumId).add(new MediumRequest(hisClock, source, priority));
-                Queues.mediumRequests.get(mediumId).sort(
-                        Comparator.comparing(MediumRequest::getClock)
-                                .thenComparing(MediumRequest::getPriority, Comparator.reverseOrder())
-                                .thenComparing(MediumRequest::getSourceId)
-                );
+                addMediumRequestToQueue(source, hisClock, mediumId, priority);
                 break;
             case ACK_MEDIUM:
                 throw new IllegalStateException();
@@ -54,12 +47,8 @@ public class RestingResolver{
                 break;
             case REQ_TUNNEL:
                 int requestedTunnelId = message[1];
-                Queues.tunnelRequests.get(requestedTunnelId).add(new TunnelRequest(hisClock, source));
-                Queues.tunnelRequests.get(requestedTunnelId).sort(
-                        Comparator.comparing(TunnelRequest::getClock)
-                                .thenComparing(TunnelRequest::getSourceId)
-                );
-                communication.sendToOne(new int[] {Clock.getClock(), -1, -1}, Tag.ACK_TUNNEL, source);
+                addTunnelRequestToQueue(source, hisClock, requestedTunnelId);
+                communication.sendToOne(new int[]{Clock.getClock(), -1, -1}, Tag.ACK_TUNNEL, source);
                 break;
             case ACK_TUNNEL:
                 throw new IllegalStateException();

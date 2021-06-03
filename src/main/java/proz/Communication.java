@@ -28,11 +28,15 @@ public class Communication {
 
     public void sendToOne(int[] message, Tag messageTag, int toWho) throws MPIException {
         Clock.clockPlusOne();
-        System.out.println(color.getColor() +
-                " Process: " + processesCount +
-                " sending message: " + Arrays.toString(message) +
-                " with tag: " + messageTag +
-                " to: " + toWho + " " + Colors.values()[toWho].getColor() + "\n");
+
+        if (Main.MESSAGE_MODE == MessageMode.FULL) {
+            System.out.println(color.getColor() +
+                    " Process: " + processesCount +
+                    " sending message: " + Arrays.toString(message) +
+                    " with tag: " + messageTag +
+                    " to: " + toWho + " " + Colors.values()[toWho].getColor() + "\n");
+        }
+
         send(message, messageTag, toWho);
     }
 

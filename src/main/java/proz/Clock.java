@@ -1,19 +1,19 @@
 package proz;
 
+import java.util.concurrent.atomic.AtomicInteger;
+
 public class Clock {
-    private static int clock = 0;
+    private static AtomicInteger clock = new AtomicInteger(0);
 
     public static int getClock() {
-        return clock;
+        return clock.get();
     }
 
-    public static void setClock(int newClock) {
-        if (newClock > clock) {
-            clock = newClock;
-        }
+    public static int setHigherClock(int newClock) {
+        return clock.getAndUpdate(value -> newClock > value ? newClock + 1 : value + 1);
     }
 
-    public static void clockPlusOne() {
-        clock++;
+    public static int clockPlusOne() {
+        return clock.addAndGet(1);
     }
 }

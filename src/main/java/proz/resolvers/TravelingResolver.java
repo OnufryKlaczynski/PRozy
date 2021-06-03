@@ -11,6 +11,8 @@ import proz.requests.TunnelRequest;
 import java.sql.SQLOutput;
 import java.util.Comparator;
 
+import static proz.resolvers.Utils.*;
+
 public class TravelingResolver {
 
     public static void resolve(Status messageInfo, int[] message, Communication communication, Process process) throws MPIException {
@@ -22,11 +24,7 @@ public class TravelingResolver {
         switch (messageTag) {
             case REQ_STORE:
                 communication.sendToOne(new int[]{Clock.getClock(), -1, -1}, Tag.ACK_STORE, source);
-                Queues.storeRequests.add(new StoreRequest(hisClock, source));
-                Queues.storeRequests.sort(
-                        Comparator.comparing(StoreRequest::getClock)
-                                .thenComparing(StoreRequest::getSourceId)
-                );
+                addRequestStoreToQueue(source, hisClock);
                 break;
             case ACK_STORE:
                 throw new IllegalStateException();
@@ -37,12 +35,7 @@ public class TravelingResolver {
                 communication.sendToOne(new int[]{Clock.getClock(), -1, -1}, Tag.ACK_MEDIUM, source);
                 int mediumId = message[1];
                 int priority = message[2];
-                Queues.mediumRequests.get(mediumId).add(new MediumRequest(hisClock, source, priority));
-                Queues.mediumRequests.get(mediumId).sort(
-                        Comparator.comparing(MediumRequest::getClock)
-                                .thenComparing(MediumRequest::getPriority, Comparator.reverseOrder())
-                                .thenComparing(MediumRequest::getSourceId)
-                );
+                addMediumRequestToQueue(source, hisClock, mediumId, priority);
                 break;
             case ACK_MEDIUM:
                 throw new IllegalStateException();
@@ -52,39 +45,61 @@ public class TravelingResolver {
                 break;
             case REQ_TUNNEL:
                 int tunnelId = message[1];
-                Queues.tunnelRequests.get(tunnelId).add(new TunnelRequest(hisClock, source));
-                Queues.tunnelRequests.get(tunnelId).sort(
-                        Comparator.comparing(TunnelRequest::getClock)
-                                .thenComparing(TunnelRequest::getSourceId)
-                );
-// TODO: jeśli prosi o ten sam tunel to musimy sprwadzić czy możemy odesła ACK czy gość ma gorszy zegarek niż my?
-                //TODO czy odsyłamy mu wiadomośc ACK??
+                addTunnelRequestToQueue(source, hisClock, tunnelId);
+                if (source != process.myrank) {
+                    communication.sendToOne(new int[]{Clock.getClock(), -1, -1}, Tag.ACK_TUNNEL, source);
+                }
+
                 break;
             case ACK_TUNNEL:
                 Queues.ackTunnelCount += 1;
-                if (Queues.ackTunnelCount == Main.PROCESS_COUNT -1) {
-                    //Możemy wejść jeśli jesteśmy pierwsi w kolejce
-                    //TODO czasowe wyjście, czas podróży
-                    if (Queues.tunnelRequests.get(process.requestedMediumId).get(0).getSourceId() == process.myrank) {
-                        communication.sendToAll(new int[]{Clock.getClock(), process.requestedMediumId, -1}, Tag.RELEASE_TUNNEL);
-                        process.touristState = TouristState.RESTING;
-                        process.requestedMediumId = -1;
-                        System.out.println(process.color.getColor() + "Przeszedłem tunel i wychodzę");
+                if (Queues.ackTunnelCount == Main.PROCESS_COUNT - 1) {
+                    boolean firstInQueue = Queues.tunnelRequests.get(process.requestedMediumId).get(0).getSourceId() == process.myrank;
+                    if (firstInQueue) {
+                        tryToLeaveTunnel(communication, process);
                     }
                 }
                 break;
+
             case RELEASE_TUNNEL:
                 int releasedTunnel = message[1];
                 Queues.tunnelRequests.get(releasedTunnel).removeIf(tunnelRequest -> tunnelRequest.getSourceId() == source);
                 if (releasedTunnel == process.requestedMediumId) {
-                    if (Queues.tunnelRequests.get(process.requestedMediumId).get(0).getSourceId() == process.myrank) {
-                        communication.sendToAll(new int[]{Clock.getClock(), process.requestedMediumId}, Tag.RELEASE_TUNNEL);
-                        process.touristState = TouristState.RESTING;
-                        process.requestedMediumId = -1;
+                    boolean firstInQueue = Queues.tunnelRequests.get(process.requestedMediumId).get(0).getSourceId() == process.myrank;
+                    if (firstInQueue) {
+                        tryToLeaveTunnel(communication, process);
                     }
                 }
                 break;
         }
 
+    }
+
+
+    private static void tryToLeaveTunnel(Communication communication, Process process) throws MPIException {
+        boolean travelingThreadAlive = process.travelingThread.isAlive();
+        if (!travelingThreadAlive) {
+            leaveTunnel(communication, process);
+        } else {
+            waitForTravelingToEndAndLeaveTunnel(communication, process);
+        }
+    }
+
+    private static void waitForTravelingToEndAndLeaveTunnel(Communication communication, Process process) {
+        new Thread(() -> {
+            try {
+                process.travelingThread.join();
+                leaveTunnel(communication, process);
+            } catch (InterruptedException | MPIException e) {
+                e.printStackTrace();
+            }
+        });
+    }
+
+    private static void leaveTunnel(Communication communication, Process process) throws MPIException {
+        communication.sendToAll(new int[]{Clock.getClock(), process.requestedMediumId, -1}, Tag.RELEASE_TUNNEL);
+        process.touristState = TouristState.RESTING;
+        process.requestedMediumId = -1;
+        System.out.println(process.color.getColor() + "Przeszedłem tunel i wychodzę");
     }
 }

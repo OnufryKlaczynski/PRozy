@@ -5,9 +5,13 @@ import mpi.Status;
 import proz.*;
 import proz.Process;
 import proz.requests.MediumRequest;
+import proz.requests.StoreRequest;
 import proz.requests.TunnelRequest;
 
 import java.util.Comparator;
+import java.util.Random;
+
+import static proz.resolvers.Utils.*;
 
 public class WaitingForMediumResolver {
 
@@ -17,8 +21,10 @@ public class WaitingForMediumResolver {
         int source = messageInfo.getSource();
         int hisClock = message[0];
 
-        switch(messageTag) {
+        switch (messageTag) {
             case REQ_STORE:
+                communication.sendToOne(new int[]{Clock.getClock(), -1, -1}, Tag.ACK_STORE, source);
+                addRequestStoreToQueue(source, hisClock);
                 break;
             case ACK_STORE:
                 throw new IllegalStateException();
@@ -27,16 +33,11 @@ public class WaitingForMediumResolver {
             case REQ_MEDIUM:
 //              Sam czeka na medium i ktoś inny przysła mu info że też chce medium
                 if (source != process.myrank) {
-                    communication.sendToOne(new int[] {Clock.getClock(), -1, -1}, Tag.ACK_MEDIUM, source);
+                    communication.sendToOne(new int[]{Clock.getClock(), -1, -1}, Tag.ACK_MEDIUM, source);
                 }
                 int mediumId = message[1];
                 int hisPriority = message[2];
-                Queues.mediumRequests.get(mediumId).add(new MediumRequest(hisClock, source, hisPriority));
-                Queues.mediumRequests.get(mediumId).sort(
-                        Comparator.comparing(MediumRequest::getClock)
-                                .thenComparing(MediumRequest::getPriority, Comparator.reverseOrder())
-                                .thenComparing(MediumRequest::getSourceId)
-                );
+                addMediumRequestToQueue(source, hisClock, mediumId, hisPriority);
                 break;
             case ACK_MEDIUM:
 //              Ktoś inny przysyła mu odpoiwada na info o medium
@@ -48,15 +49,15 @@ public class WaitingForMediumResolver {
                 }
 //              TODO: Czy to powinno być - 1 ? chyba tak bo siebie nie liczymy
                 if (Queues.ackMediumCount == Main.PROCESS_COUNT - 1) {
-                    if ( Queues.blockedMediums.size() == Main.MEDIUM_COUNT) {
+                    if (Queues.blockedMediums.size() == Main.MEDIUM_COUNT) {
 //                      TODO: nie prosimy o medium dopóki nie dostaniemy release
                         return;
                     }
 
-                    if ( Queues.blockedMediums.contains(process.requestedMediumId)) {
+                    if (Queues.blockedMediums.contains(process.requestedMediumId)) {
                         process.requestedMediumPriority += 1;
                         for (int i = 1; i < Main.MEDIUM_COUNT; i++) {
-                            int nextMediumToCheck = (process.requestedMediumId + i ) % Main.MEDIUM_COUNT;
+                            int nextMediumToCheck = (process.requestedMediumId + i) % Main.MEDIUM_COUNT;
                             if (!Queues.blockedMediums.contains(nextMediumToCheck)) {
                                 process.requestedMediumId = nextMediumToCheck;
                                 break;
@@ -65,9 +66,22 @@ public class WaitingForMediumResolver {
                         int[] requestMedium = {Clock.getClock(), process.requestedMediumId, process.requestedMediumPriority};
                         communication.sendToAll(requestMedium, Tag.REQ_MEDIUM);
                     } else {
-                        System.out.println(process.color.getColor() + "Zaczynam podróżować i zmieniam stan na: " + TouristState.LEAVING_TUNNEL);
+                        System.out.println(process.color.getColor() + "Zaczynam podróżować i zmieniam stan na: " + TouristState.LEAVING_TUNNEL + "\n");
                         process.touristState = TouristState.LEAVING_TUNNEL;
+                        communication.sendToAll(new int[]{Clock.getClock(), -1, -1}, Tag.RELEASE_STORE);
                         communication.sendToAll(new int[]{Clock.getClock(), process.requestedMediumId, -1}, Tag.REQ_TUNNEL);
+                        process.travelingThread = new Thread(() -> {
+                            Random random = new Random();
+                            try {
+                                int travelTime = (int) (random.nextDouble() * 3 * Main.SLOWER_MODE);
+                                System.out.println(process.color.getColor() + "Będę podróżować: " + travelTime + " ms" + "\n");
+                                Thread.sleep(travelTime);
+                            } catch (InterruptedException e) {
+                                e.printStackTrace();
+                            }
+                        });
+                        process.travelingThread.run();
+
                         return;
                     }
                 }
@@ -79,7 +93,7 @@ public class WaitingForMediumResolver {
                 //TODO czy możę trzymam jednak indeks tego medium?
                 //TODO a jednak chyba się nie pierdoli? bo pierwsza lista jest o stałym rozmiarze
                 Queues.mediumRequests.get(mediumId).removeIf(mediumRequest -> mediumRequest.getSourceId() == source);
-                Queues.blockedMediums.removeIf(id -> id  == mediumId);
+                Queues.blockedMediums.removeIf(id -> id == mediumId);
                 if (Queues.blockedMediums.size() == Main.MEDIUM_COUNT - 1) {
                     //TODO czy tu powinno być requestMediumPriority + 1?
                     process.requestedMediumId = mediumId;
@@ -91,12 +105,9 @@ public class WaitingForMediumResolver {
                 break;
             case REQ_TUNNEL:
                 int tunnelId = message[1];
-                Queues.tunnelRequests.get(tunnelId).add(new TunnelRequest(hisClock, source));
-                Queues.tunnelRequests.get(tunnelId).sort(
-                        Comparator.comparing(TunnelRequest::getClock)
-                                .thenComparing(TunnelRequest::getSourceId)
-                );
-                int[] response = new int[] {Clock.getClock(), -1, -1};
+                addTunnelRequestToQueue(source, hisClock, tunnelId);
+
+                int[] response = new int[]{Clock.getClock(), -1, -1};
                 communication.sendToOne(response, Tag.ACK_TUNNEL, source);
                 break;
             case ACK_TUNNEL:

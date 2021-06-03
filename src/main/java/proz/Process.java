@@ -6,6 +6,7 @@ public class Process {
 
     public final int myrank;
     public final int processesCount;
+    public Thread travelingThread;
     private int STORE_SPACE;
     private int MEDIUM_COUNT;
 
