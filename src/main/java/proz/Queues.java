@@ -16,7 +16,7 @@ public class Queues {
     public static List<List<MediumRequest>> mediumRequests = new ArrayList<>();
     public static int ackMediumCount = 0;
     public static Set<Integer> blockedMediums = new HashSet<>();
-
+    public static int releaseMediumCounter = 0;
 
     public static List<List<TunnelRequest>> tunnelRequests = new ArrayList<>();
     public static int ackTunnelCount = 0;

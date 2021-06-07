@@ -38,7 +38,7 @@ public class WaitingForStoreResolver {
                 break;
 
             case REQ_MEDIUM:
-                communication.sendToOne(new int[]{Clock.getClock(), -1, -1}, Tag.ACK_MEDIUM, source);
+                sendAckMedium(source, process, communication);
                 int mediumId = message[1];
                 int priority = message[2];
                 addMediumRequestToQueue(source, hisClock, mediumId, priority);

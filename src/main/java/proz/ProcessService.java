@@ -56,12 +56,12 @@ public class ProcessService {
         switch (process.touristState) {
 
             case RESTING: {
-                RestingResolver.resolve(messageInfo, message, communication);
+                RestingResolver.resolve(messageInfo, message, communication, process);
                 break;
             }
 
             case WAITING_FOR_STORE: {
-                WaitingForStoreResolver.resolve(messageInfo, message, communication,  process);
+                WaitingForStoreResolver.resolve(messageInfo, message, communication, process);
                 break;
             }
 

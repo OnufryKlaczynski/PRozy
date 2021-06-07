@@ -29,9 +29,8 @@ public class WaitingForMediumResolver {
                 break;
             case REQ_MEDIUM:
 //              Sam czeka na medium i ktoś inny przysła mu info że też chce medium
-                if (source != process.myrank) {
-                    communication.sendToOne(new int[]{Clock.getClock(), -1, -1}, Tag.ACK_MEDIUM, source);
-                }
+                sendAckMedium(source, process, communication);
+
                 int requestedMedium = message[1];
                 int hisPriority = message[2];
                 addMediumRequestToQueue(source, hisClock, requestedMedium, hisPriority);
@@ -105,9 +104,22 @@ public class WaitingForMediumResolver {
         System.out.println(process.color.getColor() + "Clock: " + Clock.getClock() + " Zaczynam podróżować i zmieniam stan na: " + TouristState.LEAVING_TUNNEL + "\n");
         process.touristState = TouristState.LEAVING_TUNNEL;
         communication.sendToAll(new int[]{Clock.getClock(), process.requestedMediumId, -1}, Tag.REQ_TUNNEL);
-        communication.sendToAll(new int[]{Clock.getClock(), process.requestedMediumId, -1}, Tag.RELEASE_MEDIUM); //TODO: iloś ile medium ma tuneli
+        boolean mediumShouldRest = Queues.releaseMediumCounter % Main.MEDIUM_RESTING[process.requestedMediumId] == 0;
+        if (mediumShouldRest) {
+            process.holdingMedium.set(true);
+            Thread mediumRestingThread = createMediumRestingThread(communication, process);
+            mediumRestingThread.start();
+        } else {
+            communication.sendToAll(new int[]{Clock.getClock(), process.requestedMediumId, -1}, Tag.RELEASE_MEDIUM); //TODO: iloś ile medium ma tuneli
+        }
+
         communication.sendToAll(new int[]{Clock.getClock(), -1, -1}, Tag.RELEASE_STORE);
-        process.travelingThread = new Thread(() -> {
+        process.travelingThread = createTravelingThread(process);
+        process.travelingThread.start();
+    }
+
+    private static Thread createTravelingThread(Process process) {
+        return new Thread(() -> {
             Random random = new Random();
             try {
                 int travelTime = (int) (random.nextDouble() * 3 * Main.SLOWER_MODE);
@@ -117,7 +129,22 @@ public class WaitingForMediumResolver {
                 e.printStackTrace();
             }
         });
-        process.travelingThread.start();
+    }
+
+    private static Thread createMediumRestingThread(Communication communication, Process process) {
+        return new Thread(() -> {
+            Random random = new Random();
+            int mediumRestTime = (int) (random.nextDouble() * 3 * Main.SLOWER_MODE);
+            try {
+                System.out.println(process.color.getColor() + " Medium musi odpoczać: " + process.requestedMediumId);
+                Thread.sleep(mediumRestTime);
+                process.holdingMedium.set(false);
+                communication.sendToAll(new int[]{Clock.getClock(), process.requestedMediumId, -1}, Tag.RELEASE_MEDIUM); //TODO: iloś ile medium ma tuneli
+
+            } catch (InterruptedException | MPIException e) {
+                e.printStackTrace();
+            }
+        });
     }
 
 

@@ -3,13 +3,14 @@ package proz.resolvers;
 import mpi.MPIException;
 import mpi.Status;
 import proz.*;
+import proz.Process;
 
 import static proz.resolvers.Utils.*;
 
 public class RestingResolver {
 
 
-    public static void resolve(Status messageInfo, int[] message, Communication communication) throws MPIException {
+    public static void resolve(Status messageInfo, int[] message, Communication communication, Process process) throws MPIException {
         int tag = messageInfo.getTag();
         Tag messageTag = Tag.of(tag);
         int source = messageInfo.getSource();
@@ -28,7 +29,7 @@ public class RestingResolver {
 
                 break;
             case REQ_MEDIUM:
-                communication.sendToOne(new int[]{Clock.getClock(), -1, -1}, Tag.ACK_MEDIUM, source);
+                sendAckMedium(source, process, communication);
                 int mediumId = message[1];
                 int priority = message[2];
                 addMediumRequestToQueue(source, hisClock, mediumId, priority);

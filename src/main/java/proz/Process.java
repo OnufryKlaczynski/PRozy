@@ -13,7 +13,7 @@ public class Process {
     private int MEDIUM_COUNT;
 
     public final Colors color;
-//    public AtomicBoolean holdingMedium = new AtomicBoolean(false);
+    public AtomicBoolean holdingMedium = new AtomicBoolean(false);
 
 
     public TouristState touristState = TouristState.RESTING;
