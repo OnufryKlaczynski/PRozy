@@ -4,11 +4,7 @@ import mpi.MPIException;
 import mpi.Status;
 import proz.*;
 import proz.Process;
-import proz.requests.MediumRequest;
-import proz.requests.StoreRequest;
-import proz.requests.TunnelRequest;
 
-import java.util.Comparator;
 
 import static proz.resolvers.Utils.*;
 
@@ -53,7 +49,7 @@ public class WaitingForStoreResolver {
 
             case RELEASE_MEDIUM:
                 mediumId = message[1];
-                Queues.mediumRequests.get(mediumId).removeIf(mediumRequest -> mediumRequest.getSourceId() == source);
+                gotMessageReleaseMedium(source, mediumId);
 
                 break;
             case REQ_TUNNEL:
@@ -68,6 +64,7 @@ public class WaitingForStoreResolver {
             case RELEASE_TUNNEL:
                 int releasedTunnel = message[1];
                 Queues.tunnelRequests.get(releasedTunnel).removeIf(tunnelRequest -> tunnelRequest.getSourceId() == source);
+
                 break;
         }
     }
@@ -82,9 +79,9 @@ public class WaitingForStoreResolver {
     }
 
     private static void changingStateToWaitingForMedium(Communication communication, Process process) throws MPIException {
-        System.out.println(process.color.getColor() + "Wchodzę do sklepu i ubiegam się o Medium" + "\n");
         process.touristState = TouristState.WAITING_FOR_MEDIUM;
         process.requestedMediumId = process.myrank % Main.MEDIUM_COUNT;
+        System.out.println(process.color.getColor() + "Clock: " + Clock.getClock() + " Wchodzę do sklepu i ubiegam się o Medium: " + process.requestedMediumId + " z priorytetem: " + process.requestedMediumPriority + "\n");
         int[] requestMedium = {Clock.getClock(), process.requestedMediumId, process.requestedMediumPriority};
         communication.sendToAll(requestMedium, Tag.REQ_MEDIUM);
     }

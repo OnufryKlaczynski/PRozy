@@ -19,4 +19,13 @@ public class MediumRequest extends BaseRequest{
     public int getPriority() {
         return priority;
     }
+
+    @Override
+    public String toString() {
+        return "MediumRequest{" +
+                "clock=" + clock +
+                ", sourceId=" + sourceId +
+                ", priority=" + priority +
+                '}';
+    }
 }

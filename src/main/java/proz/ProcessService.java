@@ -22,19 +22,14 @@ public class ProcessService {
         System.out.println(process.color.getColor() + "My rank is " + process.myrank + "\n");
 
 
-        if (0 == process.myrank || 1 == process.myrank) {
-            process.touristState = TouristState.WAITING_FOR_STORE;
-            communication.sendToAll(message, Tag.REQ_STORE);
-        }
+        process.touristState = TouristState.WAITING_FOR_STORE;
+        communication.sendToAll(message, Tag.REQ_STORE);
+
 
         while (true) {
             Status messageInfos = MPI.COMM_WORLD.recv(message, 3, MPI.INT, MPI.ANY_SOURCE, MPI.ANY_TAG);
             int hisClock = message[0];
             Clock.setHigherClock(hisClock);
-
-
-            Thread.sleep(Main.SLOWER_MODE);
-            respond(messageInfos, message, process, communication);
             if (Main.MESSAGE_MODE == MessageMode.FULL) {
                 System.out.println(process.color.getColor() +
                         " Process " + process.myrank +
@@ -46,6 +41,10 @@ public class ProcessService {
                         + "\n"
                 );
             }
+
+            Thread.sleep(Main.SLOWER_MODE);
+            respond(messageInfos, message, process, communication);
+
 
         }
 

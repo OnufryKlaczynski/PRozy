@@ -16,4 +16,12 @@ public class BaseRequest {
     public int getSourceId() {
         return sourceId;
     }
+
+    @Override
+    public String toString() {
+        return "BaseRequest{" +
+                "clock=" + clock +
+                ", sourceId=" + sourceId +
+                '}';
+    }
 }

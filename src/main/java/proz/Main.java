@@ -2,12 +2,12 @@ package proz;
 
 import mpi.*;
 
-import java.util.Arrays;
+
 import java.util.Random;
 
 public class Main {
     public static final int STORE_SPACE = 1;
-    public static final int MEDIUM_COUNT = 2;
+    public static final int MEDIUM_COUNT = 1;
 
     public static int PROCESS_COUNT = 0;
 

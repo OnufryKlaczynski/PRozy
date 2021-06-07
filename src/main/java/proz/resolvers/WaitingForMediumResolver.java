@@ -4,11 +4,8 @@ import mpi.MPIException;
 import mpi.Status;
 import proz.*;
 import proz.Process;
-import proz.requests.MediumRequest;
-import proz.requests.StoreRequest;
-import proz.requests.TunnelRequest;
 
-import java.util.Comparator;
+import java.sql.SQLOutput;
 import java.util.Random;
 
 import static proz.resolvers.Utils.*;
@@ -35,9 +32,9 @@ public class WaitingForMediumResolver {
                 if (source != process.myrank) {
                     communication.sendToOne(new int[]{Clock.getClock(), -1, -1}, Tag.ACK_MEDIUM, source);
                 }
-                int mediumId = message[1];
+                int requestedMedium = message[1];
                 int hisPriority = message[2];
-                addMediumRequestToQueue(source, hisClock, mediumId, hisPriority);
+                addMediumRequestToQueue(source, hisClock, requestedMedium, hisPriority);
                 break;
             case ACK_MEDIUM:
 //              Ktoś inny przysyła mu odpoiwada na info o medium
@@ -45,42 +42,31 @@ public class WaitingForMediumResolver {
 
                 int blockedMediumId = message[1];
                 if (blockedMediumId != -1) {
+                    System.out.println(process.color.getColor() + "Clock: " + Clock.getClock() + " dodaje zablokowane medium " + blockedMediumId + " dostałem tą widaomość od " + source + "\n");
+
                     Queues.blockedMediums.add(blockedMediumId);
                 }
 //              TODO: Czy to powinno być - 1 ? chyba tak bo siebie nie liczymy
                 if (Queues.ackMediumCount == Main.PROCESS_COUNT - 1) {
-                    if (Queues.blockedMediums.size() == Main.MEDIUM_COUNT) {
-//                      TODO: nie prosimy o medium dopóki nie dostaniemy release
+                    boolean allMediumBlocked = Queues.blockedMediums.size() == Main.MEDIUM_COUNT;
+                    if (allMediumBlocked) {
+                        System.out.println(process.color.getColor() + "Clock: " + Clock.getClock() + " Wszystkie media są zajęte:" + Queues.blockedMediums + "\n");
                         return;
                     }
-
+//TODO: ale tu trzeba dodać sprwadzanie kolejek przecież nie ma XD
                     if (Queues.blockedMediums.contains(process.requestedMediumId)) {
-                        process.requestedMediumPriority += 1;
-                        for (int i = 1; i < Main.MEDIUM_COUNT; i++) {
-                            int nextMediumToCheck = (process.requestedMediumId + i) % Main.MEDIUM_COUNT;
-                            if (!Queues.blockedMediums.contains(nextMediumToCheck)) {
-                                process.requestedMediumId = nextMediumToCheck;
-                                break;
-                            }
-                        }
-                        int[] requestMedium = {Clock.getClock(), process.requestedMediumId, process.requestedMediumPriority};
-                        communication.sendToAll(requestMedium, Tag.REQ_MEDIUM);
+                        tryRequestNextMedium(communication, process);
                     } else {
-                        System.out.println(process.color.getColor() + "Zaczynam podróżować i zmieniam stan na: " + TouristState.LEAVING_TUNNEL + "\n");
-                        process.touristState = TouristState.LEAVING_TUNNEL;
-                        communication.sendToAll(new int[]{Clock.getClock(), -1, -1}, Tag.RELEASE_STORE);
-                        communication.sendToAll(new int[]{Clock.getClock(), process.requestedMediumId, -1}, Tag.REQ_TUNNEL);
-                        process.travelingThread = new Thread(() -> {
-                            Random random = new Random();
-                            try {
-                                int travelTime = (int) (random.nextDouble() * 3 * Main.SLOWER_MODE);
-                                System.out.println(process.color.getColor() + "Będę podróżować: " + travelTime + " ms" + "\n");
-                                Thread.sleep(travelTime);
-                            } catch (InterruptedException e) {
-                                e.printStackTrace();
-                            }
-                        });
-                        process.travelingThread.run();
+                        boolean firstInMediumRequestQueue = Queues.mediumRequests.get(process.requestedMediumId).get(0).getSourceId() == process.myrank;
+                        if (!firstInMediumRequestQueue) {
+                            System.out.println(process.color.getColor() + "Clock: " + Clock.getClock() + " " + Queues.mediumRequests.toString() + "\n");
+
+//                            System.out.println(process.color.getColor() + "Clock: " + Clock.getClock() + " Nie jestem pierwszy w kolejce" + "\n");
+
+                            tryRequestNextMedium(communication, process);
+                            return;
+                        }
+                        changeStatusToLeavingTunnel(communication, process);
 
                         return;
                     }
@@ -88,19 +74,12 @@ public class WaitingForMediumResolver {
 
                 break;
             case RELEASE_MEDIUM:
-                mediumId = message[1];
-                // TODO To jest źle bo to miał być array a jest lista i indeksy się popierdolą, zamienić na null value przy usuwaniu?
-                //TODO czy możę trzymam jednak indeks tego medium?
-                //TODO a jednak chyba się nie pierdoli? bo pierwsza lista jest o stałym rozmiarze
-                Queues.mediumRequests.get(mediumId).removeIf(mediumRequest -> mediumRequest.getSourceId() == source);
-                Queues.blockedMediums.removeIf(id -> id == mediumId);
-                if (Queues.blockedMediums.size() == Main.MEDIUM_COUNT - 1) {
-                    //TODO czy tu powinno być requestMediumPriority + 1?
-                    process.requestedMediumId = mediumId;
-                    int[] requestMedium = {Clock.getClock(), process.requestedMediumId, process.requestedMediumPriority};
-                    communication.sendToAll(requestMedium, Tag.REQ_MEDIUM);
+                int releasedMedium = message[1];
+                gotMessageReleaseMedium(source, releasedMedium);
+                System.out.println(process.color.getColor() + "Clock: " + Clock.getClock() + "Dostałem wiadomośc żeby zwonlić medium");
+                if (Queues.ackMediumCount == Main.PROCESS_COUNT - 1) {
+                    tryRequestNextMedium(communication, process);
                 }
-
 
                 break;
             case REQ_TUNNEL:
@@ -112,12 +91,54 @@ public class WaitingForMediumResolver {
                 break;
             case ACK_TUNNEL:
                 throw new IllegalStateException();
+
             case RELEASE_TUNNEL:
                 tunnelId = message[1];
                 Queues.tunnelRequests.get(tunnelId).removeIf(tunnelRequest -> tunnelRequest.getSourceId() == source);
                 break;
         }
 
+    }
+
+    private static void changeStatusToLeavingTunnel(Communication communication, Process process) throws MPIException {
+        System.out.println(process.color.getColor() + "Clock: " + Clock.getClock() + Queues.mediumRequests + " ackCounter " + Queues.ackMediumCount + "\n");
+        System.out.println(process.color.getColor() + "Clock: " + Clock.getClock() + " Zaczynam podróżować i zmieniam stan na: " + TouristState.LEAVING_TUNNEL + "\n");
+        process.touristState = TouristState.LEAVING_TUNNEL;
+        communication.sendToAll(new int[]{Clock.getClock(), process.requestedMediumId, -1}, Tag.REQ_TUNNEL);
+        communication.sendToAll(new int[]{Clock.getClock(), process.requestedMediumId, -1}, Tag.RELEASE_MEDIUM); //TODO: iloś ile medium ma tuneli
+        communication.sendToAll(new int[]{Clock.getClock(), -1, -1}, Tag.RELEASE_STORE);
+        process.travelingThread = new Thread(() -> {
+            Random random = new Random();
+            try {
+                int travelTime = (int) (random.nextDouble() * 3 * Main.SLOWER_MODE);
+                System.out.println(process.color.getColor() + "Clock: " + Clock.getClock() + " Będę podróżować: " + travelTime + " ms" + "\n");
+                Thread.sleep(travelTime);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        });
+        process.travelingThread.start();
+    }
+
+
+    private static void tryRequestNextMedium(Communication communication, Process process) throws MPIException {
+        System.out.println(process.color.getColor() + "Clock: " + Clock.getClock() + " Próbuję znaleźć następne wolne medium" + "\n");
+
+        int oldMediumId = process.requestedMediumId;
+        process.requestedMediumPriority += 1;
+        for (int i = 1; i < Main.MEDIUM_COUNT; i++) {
+            int nextMediumToCheck = (process.requestedMediumId + i) % Main.MEDIUM_COUNT;
+            if (!Queues.blockedMediums.contains(nextMediumToCheck)) {
+                process.requestedMediumId = nextMediumToCheck;
+                break;
+            }
+        }
+
+        int[] requestMedium = {Clock.getClock(), process.requestedMediumId, process.requestedMediumPriority};
+        Queues.ackMediumCount = 0;
+        System.out.println(process.color.getColor() + "Clock: " + Clock.getClock() + " Strzelam po następne medium" + "\n");
+
+        communication.sendToAll(requestMedium, Tag.REQ_MEDIUM);
     }
 
 }

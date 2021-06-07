@@ -1,4 +1,4 @@
-mpirun -np 3 \
+mpirun -np 4 \
   --hostfile /home/toor/PRoz/src/hostfile \
   --prefix /usr/local \
   /usr/bin/java \

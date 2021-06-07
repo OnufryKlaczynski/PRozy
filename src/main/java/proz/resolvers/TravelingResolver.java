@@ -4,12 +4,6 @@ import mpi.MPIException;
 import mpi.Status;
 import proz.*;
 import proz.Process;
-import proz.requests.MediumRequest;
-import proz.requests.StoreRequest;
-import proz.requests.TunnelRequest;
-
-import java.sql.SQLOutput;
-import java.util.Comparator;
 
 import static proz.resolvers.Utils.*;
 
@@ -41,7 +35,8 @@ public class TravelingResolver {
                 throw new IllegalStateException();
             case RELEASE_MEDIUM:
                 mediumId = message[1];
-                Queues.mediumRequests.get(mediumId).removeIf(mediumRequest -> mediumRequest.getSourceId() == source);
+                gotMessageReleaseMedium(source, mediumId);
+
                 break;
             case REQ_TUNNEL:
                 int tunnelId = message[1];
@@ -64,7 +59,7 @@ public class TravelingResolver {
             case RELEASE_TUNNEL:
                 int releasedTunnel = message[1];
                 Queues.tunnelRequests.get(releasedTunnel).removeIf(tunnelRequest -> tunnelRequest.getSourceId() == source);
-                if (releasedTunnel == process.requestedMediumId) {
+                if (releasedTunnel == process.requestedMediumId && Queues.ackTunnelCount == Main.PROCESS_COUNT - 1) {
                     boolean firstInQueue = Queues.tunnelRequests.get(process.requestedMediumId).get(0).getSourceId() == process.myrank;
                     if (firstInQueue) {
                         tryToLeaveTunnel(communication, process);
@@ -98,8 +93,16 @@ public class TravelingResolver {
 
     private static void leaveTunnel(Communication communication, Process process) throws MPIException {
         communication.sendToAll(new int[]{Clock.getClock(), process.requestedMediumId, -1}, Tag.RELEASE_TUNNEL);
+        resetCounters(process);
+        System.out.println(process.color.getColor() + "Clock: " + Clock.getClock() + " Przeszedłem tunel i wychodzę");
+    }
+
+    private static void resetCounters(Process process) {
         process.touristState = TouristState.RESTING;
         process.requestedMediumId = -1;
-        System.out.println(process.color.getColor() + "Przeszedłem tunel i wychodzę");
+        process.requestedMediumPriority = 0;
+        Queues.ackStoreCount = 0;
+        Queues.ackMediumCount = 0;
+        Queues.ackTunnelCount = 0;
     }
 }

@@ -2,6 +2,8 @@ package proz;
 
 import utils.Colors;
 
+import java.util.concurrent.atomic.AtomicBoolean;
+
 public class Process {
 
     public final int myrank;
@@ -11,7 +13,7 @@ public class Process {
     private int MEDIUM_COUNT;
 
     public final Colors color;
-
+//    public AtomicBoolean holdingMedium = new AtomicBoolean(false);
 
 
     public TouristState touristState = TouristState.RESTING;

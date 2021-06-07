@@ -3,11 +3,6 @@ package proz.resolvers;
 import mpi.MPIException;
 import mpi.Status;
 import proz.*;
-import proz.requests.MediumRequest;
-import proz.requests.StoreRequest;
-import proz.requests.TunnelRequest;
-
-import java.util.Comparator;
 
 import static proz.resolvers.Utils.*;
 
@@ -42,8 +37,7 @@ public class RestingResolver {
                 throw new IllegalStateException();
             case RELEASE_MEDIUM:
                 mediumId = message[1];
-                Queues.mediumRequests.get(mediumId).removeIf(mediumRequest -> mediumRequest.getSourceId() == source);
-
+                gotMessageReleaseMedium(source, mediumId);
                 break;
             case REQ_TUNNEL:
                 int requestedTunnelId = message[1];
