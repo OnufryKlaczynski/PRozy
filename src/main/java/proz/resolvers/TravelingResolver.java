@@ -5,6 +5,8 @@ import mpi.Status;
 import proz.*;
 import proz.Process;
 
+import java.util.Random;
+
 import static proz.resolvers.Utils.*;
 
 public class TravelingResolver {
@@ -95,6 +97,26 @@ public class TravelingResolver {
         communication.sendToAll(new int[]{Clock.getClock(), process.requestedMediumId, -1}, Tag.RELEASE_TUNNEL);
         resetCounters(process);
         System.out.println(process.color.getColor() + "Clock: " + Clock.getClock() + " Przeszedłem tunel i wychodzę");
+        Thread restingThread = new Thread(() -> {
+            Random random = new Random();
+            int restingTime = (int) (random.nextDouble() * 4 * Main.SLOWER_MODE);
+            System.out.println(process.color.getColor() + "Clock: " + Clock.getClock() + " Będę odpoczywać " + restingTime + "ms");
+
+            try {
+                Thread.sleep(restingTime);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            int[] message = new int[]{Clock.getClock(), -1, -1};
+            process.touristState = TouristState.WAITING_FOR_STORE;
+            try {
+                communication.sendToAll(message, Tag.REQ_STORE);
+            } catch (MPIException e) {
+                e.printStackTrace();
+            }
+        });
+
+        restingThread.start();
     }
 
     private static void resetCounters(Process process) {

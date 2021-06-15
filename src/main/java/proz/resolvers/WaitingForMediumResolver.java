@@ -58,8 +58,7 @@ public class WaitingForMediumResolver {
                     } else {
                         boolean firstInMediumRequestQueue = Queues.mediumRequests.get(process.requestedMediumId).get(0).getSourceId() == process.myrank;
                         if (!firstInMediumRequestQueue) {
-                            System.out.println(process.color.getColor() + "Clock: " + Clock.getClock() + " " + Queues.mediumRequests.toString() + "\n");
-
+//                            System.out.println(process.color.getColor() + "Clock: " + Clock.getClock() + " " + Queues.mediumRequests.toString() + "\n");
 //                            System.out.println(process.color.getColor() + "Clock: " + Clock.getClock() + " Nie jestem pierwszy w kolejce" + "\n");
 
                             tryRequestNextMedium(communication, process);
@@ -75,7 +74,7 @@ public class WaitingForMediumResolver {
             case RELEASE_MEDIUM:
                 int releasedMedium = message[1];
                 gotMessageReleaseMedium(source, releasedMedium);
-                System.out.println(process.color.getColor() + "Clock: " + Clock.getClock() + "Dostałem wiadomośc żeby zwonlić medium");
+//                System.out.println(process.color.getColor() + "Clock: " + Clock.getClock() + "Dostałem wiadomośc żeby zwonlić medium");
                 if (Queues.ackMediumCount == Main.PROCESS_COUNT - 1) {
                     tryRequestNextMedium(communication, process);
                 }
